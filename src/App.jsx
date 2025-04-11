@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Webcam from "react-webcam";
+import Together from "together-ai";
 import { FaSpinner } from "react-icons/fa";
 
 function App() {
@@ -13,7 +14,9 @@ function App() {
   const [hasWelcomed, setHasWelcomed] = useState(false);
   const captureIntervalRef = useRef(null);
   const recognitionRef = useRef(null);
-  
+  const together = new Together({
+    apiKey: "3627bf0ec33ae02abfdaa8f8301eecfda6083178151203ff72381c7877a275ba",
+  });
 
   const captureImage = useCallback(async () => {
     if (webcamRef.current) {
@@ -21,56 +24,37 @@ function App() {
       if (imageSrc) {
         try {
           setIsLoading(true);
-          const base64 = imageSrc.split(',')[1];
+          const base64 = imageSrc.split(",")[1];
   
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer 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",
-              "HTTP-Referer": window.location.origin, 
-              "X-Title": "VisionaryAI"
-            },
-            body: JSON.stringify({
-              model: "meta-llama/llama-4-maverick:free",
-              messages: [
-                {
-                  role: "system",
-                  content: "Consider yourself as an assistant for a blind man and you are here to help him see the world in front of him so describe the image in a single sentence make it crisp concise and accurate. Make sure the answer is right and make sure not to exceed it over a sentence. Very very important instruction make it short and less than a sentence and less than one Make it crisp and importantly - concise",
-                },
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "text",
-                      text: "Describe the image in one short sentence.",
+          const response = await together.chat.completions.create({
+            model: "meta-llama/Llama-Vision-Free",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Consider yourself as an assistant for a blind man and you are here to help him see the world in front of him so describe the image in a single sentence make it crisp concise and accurate. Make sure the answer is right and make sure not to exceed it over a sentence. Very very important instruction make it short and less than a sentence and less than one Make it crisp and importantly - concise",
+              },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: "Describe the image in one short sentence.",
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:image/jpeg;base64,${base64}`,
                     },
-                    {
-                      type: "image_url",
-                      image_url: {
-                        url: `data:image/jpeg;base64,${base64}`,
-                      },
-                    },
-                  ],
-                },
-              ],
-              max_tokens: 100,
-              temperature: 0.7,
-              stream: false,
-              data_policy: {
-                allow_prompt_training: true,
-                allow_response_training: true
-              }
-            }),
+                  },
+                ],
+              },
+            ],
+            max_tokens: 100,
+            temperature: 0.7,
           });
   
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || "API request failed");
-          }
-          
-          const data = await response.json();
-          const reply = data?.choices?.[0]?.message?.content?.trim();
+          const reply = response.choices?.[0]?.message?.content?.trim();
   
           if (reply) {
             setCaption(reply);
@@ -78,7 +62,8 @@ function App() {
               speakText(reply);
             }
           } else {
-            const errorMessage = "Could not describe the scene. Please try again.";
+            const errorMessage =
+              "Could not describe the scene. Please try again.";
             setCaption(errorMessage);
             if (!isMuted) {
               speakText(errorMessage);
