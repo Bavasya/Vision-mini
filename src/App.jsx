@@ -13,6 +13,7 @@ function App() {
   const [hasWelcomed, setHasWelcomed] = useState(false);
   const captureIntervalRef = useRef(null);
   const recognitionRef = useRef(null);
+  
 
   const captureImage = useCallback(async () => {
     if (webcamRef.current) {
