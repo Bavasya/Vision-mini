@@ -26,7 +26,7 @@ function App() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+              "Authorization": "Bearer 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",
               "HTTP-Referer": window.location.origin, 
               "X-Title": "VisionaryAI"
             },
